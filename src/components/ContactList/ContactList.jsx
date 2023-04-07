@@ -1,4 +1,4 @@
-const ContactList = ({ contacts, delContact }) => {
+export const ContactList = ({ contacts, delContact }) => {
   return (
     <ul>
       {contacts.map(contact => (

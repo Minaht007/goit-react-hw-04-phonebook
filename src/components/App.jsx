@@ -1,86 +1,67 @@
+import { useState, useEffect } from 'react';
+import { ContactForm } from './ContactForm/ContactForm';
+import { Filter } from './Filter/Filter';
+import { ContactList } from './ContactList/ContactList';
 import { nanoid } from 'nanoid';
-import { Component } from 'react';
-import ContactForm from './ContactForm/ContactForm';
-import ContactList from './ContactList/ContactList';
-import Filter from './Filter/Filter';
 
-class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
+export function App() {
+  const contactFirst = () => {
+    return JSON.parse(window.localStorage.getItem('contacts')) ?? [];
   };
-  addContact = newContact => {
-    const isInContacts = this.state.contacts.some(
-      contact => contact.name.toLowerCase() === newContact.name.toLowerCase()
+  const [contacts, setContacts] = useState(contactFirst());
+  const [filterName, setFilter] = useState('');
+
+  useEffect(() => {
+    window.localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const alertName = () => {
+    return contacts.map(contact => contact.name);
+  };
+
+  const deleteContacts = contactsID => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== contactsID)
     );
-    if (isInContacts) {
-      alert('This contact IS');
+  };
+
+  const filterOnChange = event => {
+    setFilter(event.currentTarget.value);
+  };
+
+  const formSubmitHandler = data => {
+    if (alertName().includes(data.name)) {
+      alert(`${data.name} is already in your contact`);
       return;
     }
-    const normalizedContact = {
-      ...newContact,
+
+    const addContacts = {
       id: nanoid(),
+      name: data.name,
+      number: data.number,
     };
-    this.setState(prevState => {
-      return {
-        contacts: [...prevState.contacts, normalizedContact],
-      };
-    });
-  };
 
-  delContact = id => {
-    const deletedItem = this.state.contacts.filter(
-      contact => contact.id === id
-    );
-    const itemsArr = JSON.parse(localStorage.getItem('deletedContacts')) || [];
-    itemsArr.push(deletedItem);
-    localStorage.setItem('deletedContacts', JSON.stringify(itemsArr));
-    this.setState(prevState => {
-      return {
-        contacts: prevState.contacts.filter(contact => contact.id !== id),
-      };
-    });
+    setContacts(prevState => [addContacts, ...prevState]);
   };
-  handelChange = evt => {
-    // evt.name.value
-    this.setState({ [evt.target.name]: evt.target.value });
-  };
+  const normalizedFilter = filterName.toLowerCase();
 
-  reset = () => {
-    this.setState({ name: '' });
-  };
+  const visibleName = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(normalizedFilter)
+  );
 
-  getFilteredContacts = () => {
-    const { contacts, filter } = this.state;
-    return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(filter.toLowerCase())
-    );
-  };
-  render() {
-    const filteredContacts = this.getFilteredContacts();
-    return (
-      <>
-        <section>
-          <h1>Phonbook</h1>
-          <ContactForm addContact={this.addContact} />
-        </section>
+  console.log(visibleName);
 
-        <section>
-          <h2>Contacts</h2>
-          <Filter filterChange={this.handelChange} filter={this.state.filter} />
-          <ContactList
-            contacts={filteredContacts}
-            delContact={this.delContact}
-          />
-        </section>
-      </>
-    );
-  }
+  return (
+    <div>
+      <h2>Phonebook</h2>
+
+      <ContactForm onSubmit={formSubmitHandler}></ContactForm>
+
+      <h3>Contacts</h3>
+
+      <Filter value={filterName} onChange={filterOnChange} />
+
+      <ContactList contacts={visibleName} onDeleteContact={deleteContacts} />
+    </div>
+  );
 }
-
-export default App;
